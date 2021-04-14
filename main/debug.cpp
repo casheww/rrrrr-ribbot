@@ -1,10 +1,11 @@
-#include <analogWrite.h>
-
 #include "debug.h"
+
+#include <analogWrite.h>
 
 #define LED_BUILTIN 1
 int leftLED = 18;
 int rightLED = 19;
+
 
 /* side: 0 for left, 1 for right */
 void setLED(int side, bool _on) { 
@@ -16,5 +17,18 @@ void setLED(int side, bool _on) {
   }
   else if (side == 1) {
     analogWrite(rightLED, brightness);
+  }
+}
+
+void doPrettyLEDs() {
+  for (int i = 0; i < 255; i+=15) {
+    analogWrite(leftLED, i);
+    analogWrite(rightLED, 255 - i);
+    delay(50);
+  }
+  for (int i = 0; i < 255; i+=25) {
+    analogWrite(rightLED, i);
+    analogWrite(leftLED, 255 - i);
+    delay(50);
   }
 }
