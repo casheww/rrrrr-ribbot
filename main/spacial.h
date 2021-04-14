@@ -1,0 +1,2 @@
+void setupTof();
+int getTof();
