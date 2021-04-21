@@ -1,2 +1,3 @@
-void setupTof();
+void setupSpacial();
 int getTof();
+bool getTracker(int side);

@@ -8,7 +8,7 @@
 
 void setup() {
   Serial.begin(115200);   // setup debugging connection back to a computer
-  setupTof();             // setup TOF things
+  setupSpacial();         // setup spacial sensors and pins and whatnot, y'know
 }
 
 void loop() {
@@ -20,7 +20,13 @@ void loop() {
   setLED(1, false);
   delay(1000);
 
+  getTracker(0);
+
   int tofDist = getTof();
   Serial.print(tofDist);
+  Serial.println();
+
+  Serial.print("tracker:");
+  Serial.print(getTracker(0));
   Serial.println();
 }
