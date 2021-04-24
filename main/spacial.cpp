@@ -7,9 +7,12 @@
 VL53L0X tof;
 
 // tracker sensor pins
-int rightTracker = 13;
-int leftTracker = 16;
+const int rightTracker = 13;
+const int leftTracker = 16;
 
+// usound
+const int usoundTrigger = 33;
+const int usoundEcho = 32;
 
 void setupSpacial() {
   // start TOF setup
@@ -30,6 +33,10 @@ void setupSpacial() {
   // trackers
   pinMode(leftTracker, INPUT);
   pinMode(rightTracker, INPUT);
+
+  // ultrasound distance sensor
+  pinMode(usoundTrigger, OUTPUT);
+  pinMode(usoundEcho, INPUT);
 }
 
 
@@ -47,4 +54,13 @@ int getTof() {
  */
 bool getTracker(int side) {
   return digitalRead(side == 0 ? leftTracker : rightTracker) == 1;
+}
+
+
+int getUsound() {
+  digitalWrite(usoundTrigger, HIGH);
+  delay(0.01);
+  digitalWrite(usoundTrigger, LOW);
+
+  return pulseIn(usoundEcho, HIGH);
 }

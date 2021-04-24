@@ -19,14 +19,20 @@ void loop() {
   setLED(0, false);
   setLED(1, false);
   delay(1000);
-
-  getTracker(0);
-
+  
   int tofDist = getTof();
   Serial.print(tofDist);
   Serial.println();
 
-  Serial.print("tracker:");
+  Serial.print("left tracker:");
   Serial.print(getTracker(0));
+  Serial.println();
+
+  Serial.print("right tracker:");
+  Serial.print(getTracker(1));
+  Serial.println();
+
+  Serial.print("usound:");
+  Serial.print(getUsound());
   Serial.println();
 }

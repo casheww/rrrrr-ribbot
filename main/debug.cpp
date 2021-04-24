@@ -3,8 +3,8 @@
 #include <analogWrite.h>
 
 #define LED_BUILTIN 1
-int leftLED = 18;
-int rightLED = 19;
+const int leftLED = 18;
+const int rightLED = 19;
 
 
 /* side: 0 for left, 1 for right */
