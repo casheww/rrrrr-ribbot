@@ -2,7 +2,6 @@
 Botched code for the really riotous rambunctious robot radicals' ribbot
 
 TODO - Programming
-- usound
 - gyro/accel
 - ir receiver
 - motor control
