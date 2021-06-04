@@ -4,10 +4,10 @@
 #include <cmath>
 using namespace std;
 
-const int left1 = 23;
-const int left2 = 25;
-const int right1 = 27;
-const int right2 = 26;
+const int left1 = 27;
+const int left2 = 26;
+const int right1 = 23;
+const int right2 = 25;
 
 
 void setupMotors() {
@@ -28,7 +28,7 @@ void stopDriveMotors() {
 
 /* motors can be driven backwards using negative power values */
 void setDriveMotors(int powerL, int powerR) {  
-  if (powerR > 0){
+  if (powerR > 0) {
     analogWrite(right1, 0);
     analogWrite(right2, abs(powerR));
   }

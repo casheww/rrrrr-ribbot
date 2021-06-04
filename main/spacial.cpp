@@ -2,6 +2,8 @@
 
 #include <Wire.h>
 #include <VL53L0X.h>
+#include <I2Cdev.h>
+#include <MPU6050.h>
 
 // time of flight var
 VL53L0X tof;
@@ -13,6 +15,12 @@ const int leftTracker = 16;
 // usound
 const int usoundTrigger = 33;
 const int usoundEcho = 32;
+
+// accel & gyro
+MPU6050 accelgyro;
+
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
 
 void setupSpacial() {
   // start TOF setup
@@ -37,6 +45,8 @@ void setupSpacial() {
   // ultrasound distance sensor
   pinMode(usoundTrigger, OUTPUT);
   pinMode(usoundEcho, INPUT);
+
+  accelgyro.initialize();
 }
 
 
@@ -63,4 +73,11 @@ int getUsound() {
   digitalWrite(usoundTrigger, LOW);
 
   return pulseIn(usoundEcho, HIGH);
+}
+
+// heck memory management, just gonna use botched serialisation
+short* getGyro() {
+  accelgyro.getRotation(&gx, &gy, &gz);
+  short* gyros[3] = { &gx, &gy, &gz };
+  return gyros[0];
 }
