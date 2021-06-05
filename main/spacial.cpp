@@ -4,6 +4,9 @@
 #include <VL53L0X.h>
 #include <I2Cdev.h>
 #include <MPU6050.h>
+#include <IRremoteESP8266.h>
+#include <IRutils.h>
+
 
 // time of flight var
 VL53L0X tof;
@@ -18,9 +21,13 @@ const int usoundEcho = 32;
 
 // accel & gyro
 MPU6050 accelgyro;
-
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
+
+// ir receiver
+const int irPin = 14;
+IRrecv irrecv(irPin);
+
 
 void setupSpacial() {
   // start TOF setup
@@ -46,7 +53,11 @@ void setupSpacial() {
   pinMode(usoundTrigger, OUTPUT);
   pinMode(usoundEcho, INPUT);
 
+  // accel & gyro
   accelgyro.initialize();
+
+  // ir receiver
+  irrecv.enableIRIn();
 }
 
 
@@ -75,9 +86,16 @@ int getUsound() {
   return pulseIn(usoundEcho, HIGH);
 }
 
-// heck memory management, just gonna use botched serialisation
 short* getGyro() {
   accelgyro.getRotation(&gx, &gy, &gz);
   short* gyros[3] = { &gx, &gy, &gz };
   return gyros[0];
+}
+
+uint64_t getIR() {
+  decode_results res;
+  if (irrecv.decode(&res)) {
+    irrecv.resume();
+    return res.value;
+  }
 }

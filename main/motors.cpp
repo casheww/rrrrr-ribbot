@@ -27,7 +27,7 @@ void stopDriveMotors() {
 
 
 /* motors can be driven backwards using negative power values */
-void setDriveMotors(int powerL, int powerR) {  
+void setDriveMotors(int powerL, int powerR) {
   if (powerR > 0) {
     analogWrite(right1, 0);
     analogWrite(right2, abs(powerR));

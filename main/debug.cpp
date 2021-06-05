@@ -9,9 +9,7 @@ const int rightLED = 19;
 
 /* side: 0 for left, 1 for right */
 void setLED(int side, bool _on) { 
-  int brightness;
-  _on ? brightness = 200 : brightness = 0;
-
+  int brightness = _on ? (side == 1 ? 255 : 190) : 0;
   if (side == 0) {
     analogWrite(leftLED, brightness);
   }
