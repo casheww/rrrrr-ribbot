@@ -1,9 +1,7 @@
-# rrrrr-ribbot
-Botched code for the really riotous rambunctious robot radicals' ribbot
+# The RRRRR's Ribbot
+Botched code for the Really Riotous Rambunctious Robot Radicals' Ribbot - a small robot that can fit in the average Tupperware box and can't drive in a straight line. Mild frog theming, horrible code, and loose motor connections
 
 TODO - Programming
-- gyro/accel
-- ir receiver
 - advanced motor control
 - *course logic*
 
