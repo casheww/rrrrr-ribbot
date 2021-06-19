@@ -1,3 +1,8 @@
+
+/*
+ * As the name suggests, this is just motor control.
+ */
+
 #include "motors.h"
 
 #include <analogWrite.h>

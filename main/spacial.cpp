@@ -1,4 +1,11 @@
+
+/*
+ * This was just going to be for spacial sensors, but at this point why not have the IR receiver here too.
+ */
+
 #include "spacial.h"
+
+#include <stdint.h>
 
 #include <Wire.h>
 #include <VL53L0X.h>
@@ -11,18 +18,22 @@
 // time of flight var
 VL53L0X tof;
 
+
 // tracker sensor pins
 const int rightTracker = 13;
 const int leftTracker = 16;
+
 
 // usound
 const int usoundTrigger = 33;
 const int usoundEcho = 32;
 
+
 // accel & gyro
 MPU6050 accelgyro;
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
+
 
 // ir receiver
 const int irPin = 14;
@@ -87,12 +98,22 @@ int getUsound() {
 }
 
 short* getGyro() {
-  accelgyro.getRotation(&gx, &gy, &gz);
-  short* gyros[3] = { &gx, &gy, &gz };
-  return gyros[0];
+  // I have no clue how pointers work aaAAAA
+  
+  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  short motion[6] = { ax, ay, az, gx, gy, gz };
+
+  short* ptr = (short*)malloc(6 * sizeof(short));
+
+  for (int i = 0; i < 6; i++) {
+    ptr[i] = motion[i];
+  }
+
+  return ptr;
 }
 
-uint64_t getIR() {
+long getIR() {
+  // I think this works???
   decode_results res;
   if (irrecv.decode(&res)) {
     irrecv.resume();

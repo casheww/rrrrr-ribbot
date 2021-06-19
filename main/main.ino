@@ -21,7 +21,7 @@ void setup() {
   setupSpacial();         // setup spacial sensors and pins and whatnot, y'know
   setupMotors();          // setup motor pin modes
 
-  delay(250);
+  delay(500);
 }
 
 
@@ -36,8 +36,10 @@ void loop() {
   Serial.println("c : passed values printed?");*/
 
   // TODO ? allignWithBridge();
-  crossBridge();
-  passSpinningWheelWall();
+  //crossBridge();
+  //passSpinningWheelWall();
+
+  
 }
 
 // to cross the rainbow bridge without falling off the edge

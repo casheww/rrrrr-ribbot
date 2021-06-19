@@ -1,3 +1,8 @@
+
+/* Random bits and bobs for help debugging
+ * ... And also pretty lights because how can you not have pretty lights
+ */
+
 #include "debug.h"
 
 #include <analogWrite.h>
