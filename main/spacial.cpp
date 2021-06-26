@@ -52,7 +52,7 @@ void setupSpacial() {
   }
 
   /// uncomment next line to set tof time allowance to 20ms (from default 33ms) !! decreases accuracy. Can increase time to increase accuracy too
-  // tof.setMeasurementTimingBudget(20000);
+  tof.setMeasurementTimingBudget(40000);    // 40000 = 40ms , so higher accuracy
 
   // end TOF setup
 
