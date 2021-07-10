@@ -1,5 +1,9 @@
 #include <analogWrite.h>
 
+#include <IRremoteESP8266.h>
+#include <IRrecv.h>
+#include <IRutils.h>
+
 #include "debug.h"
 #include "spacial.h"
 #include "motors.h"
@@ -17,9 +21,13 @@
 
 // wheel takes ~ 6 seconds to do a full rotation, so we can take 15 distance readings ~0.5 seconds apart to get a picture of a full rotation (and a bit)
 const int wheelDistArrayLen = 15;
-
 int distances[wheelDistArrayLen];
 int distIndex = 0;
+
+const int IRarrayLen = 5;
+long IRreadings[IRarrayLen];
+int IRindex = 0;
+
 
 
 void setup() {
@@ -34,15 +42,30 @@ void setup() {
 
 }
 
+
+// used to track which obstacle we're on
+int currentSection = 0;
+
 void loop() {
 
   // TODO ? allignWithBridge();
-  crossBridge();
-  setLED(0, false);
-  setLED(1, false);
 
-  passSpinnyWheelWall();
-  // TODO ? spot IR beacon to turn right, or similar
+  if (currentSection == 0){
+    crossBridge();
+    setLED(0, false);
+    setLED(1, false);
+  }
+  else if (currentSection == 1) {
+    passSpinnyWheelWall();
+    setLED(0, false);
+    setLED(1, false);
+  }
+  else if (currentSection == 2) {
+    followIRBeacon();
+  }
+  else if (currentSection >= 3) {
+    doPrettyLEDs();
+  }
 
 }
 
@@ -59,6 +82,7 @@ float downMod;
 
 // to cross the rainbow bridge without falling off the edge
 void crossBridge() {
+  Serial.println("crossing bridge");
   bool success = false;
   bool warningLedOn = false;
 
@@ -106,6 +130,9 @@ void crossBridge() {
       if (!success) {
         setDriveMotors(forwardPower, forwardPower);
       }
+      else {
+        currentSection = 1;
+      }
     }
     else {
       //setLED(0, true);
@@ -114,6 +141,7 @@ void crossBridge() {
 }
 
 
+// this doesn't actually do anything interesting anymore
 int setSpeedMod(int timerCount) {
   float t = timerCount / 10;
   // lerp
@@ -130,6 +158,7 @@ int setSpeedMod(int timerCount) {
    Shold return false if the obstacle doesn't move and is probably a wall.
 */
 bool wheelCheck() {
+  Serial.println("doing wheel check");
   setLED(1, true);
 
   stopDriveMotors();
@@ -179,7 +208,7 @@ bool wheelCheck() {
 // START SPINNY WHEEL
 
 void passSpinnyWheelWall() {
-  Serial.println("passSpinnyWheelWall() running");
+  Serial.println("passing the spinny wheel wall");
   bool success = false;
   bool stopped = true;
 
@@ -213,33 +242,136 @@ void passSpinnyWheelWall() {
     Serial.println(farIndex);
     Serial.println(distances[farIndex]);
     
-    setLED(1, false);
-
     if (closeIndex != -1 && farIndex != -1) {
       setLED(0, true);
       // we think we have seen the wheel on both the close and far sides of its rotation
       if (closeIndex > wheelDistArrayLen * 0.7) {
         // we think the closer part of the rotation is near to the end of the array
-        Serial.println("aaa");
+        success = true;
+        currentSection = 2;
       }
       else {
         stopDriveMotors();
         stopped = true;
-        while (getTof() > 80) {
-          delay(200);
-        }
+        int d;
+        do {
+          d = getTof();
+          delay(100);
+        } while (d > 80);
       }
+    }
+    else {
+      setDriveMotors(180,180);
+      delay(100);
+      wheelCheck();
     }
   }
 }
 
-
-// disgusting cumulative distances to the closest part of circumference and further part of circumference
-// distance to end of 'library' not included because it exceeds the range of the time of flight dist sensor
-// TODO : these are currently unused, I think. Use it or lose it
-const int wayTooClose = 75;
-const int wheelDistAMin = 100;
-const int wheelDistAMax = 300;
-const int wheelDistBMax = 300 + 400;
-
 // END SPINNY WHEEL
+
+
+
+// START INFRARED
+
+void followIRBeacon() {
+  Serial.println("following IR beacon");
+  bool driveToCorridorSuccess = false;
+  bool finalSuccess = false;
+  bool overallSuccess = false;
+
+  // blindly drive forward and hope that everything is okay
+  setDriveMotors(180, 180);
+  delay(1000);
+  stopDriveMotors();
+  delay(100);
+  setDriveMotors(180,-180);
+  delay(500);
+  stopDriveMotors();
+  delay(100);
+  setDriveMotors(180, 180);
+
+  while (!finalSuccess) {
+
+    long ir = getIR();
+    IRreadings[IRindex] = ir;
+    IRindex++;
+    if (IRindex >= IRarrayLen) { IRindex = 0; }
+
+    char pos = checkIRCorridorPos();
+
+    if (pos == 'l') {
+      setLED(0, true);
+      setLED(1, false);
+      pos = 'l';
+      Serial.println(pos);
+      setDriveMotors(190, 0);
+    }
+    else if (pos == 'r') {
+      setLED(0, false);
+      setLED(1, true);
+      pos = 'r';
+      Serial.println(pos);
+      setDriveMotors(0, 190);
+    }
+    else if (pos = 'c') {
+      setLED(0, true);
+      setLED(1, true);
+      pos = 'c';
+      Serial.println(pos);
+      setDriveMotors(190, 190);
+    }
+
+    delay(400);
+    
+  }
+
+  currentSection = 10;
+}
+
+/* 
+ *  Uses an existing array of IR readings to determine where in the IR corridor we are.
+ *  The return can be:
+ *    'l' when too far left
+ *    'r' when too far right
+ *    'c' when in the centre of the corridor.
+ *  Due to the use of an array that's built up and updated over time, there is a little delay (see followIRBeacon)
+ */
+char checkIRCorridorPos() {
+
+  /*
+   * IR transmitter codes:
+   * too far left:  FF04FB
+   * centre:        FF01FE
+   * too far right: FF02FD
+   */
+
+  int leftCount = 0;
+  int centreCount = 0;
+  int rightCount = 0;
+  
+  for (int i = 0; i < IRarrayLen; i++) {
+    serialPrintUint64(IRreadings[i], HEX);
+    Serial.print(" , ");
+    if (IRreadings[i] == 0xFF04FB) { leftCount++; }
+    else if (IRreadings[i] == 0xFF01FE) { centreCount++; }
+    else if (IRreadings[i] == 0xFF02FD) { rightCount++; }
+  }
+  Serial.println("");
+
+  int _max = max(max(leftCount, centreCount), rightCount);
+
+  if (_max == leftCount) {
+    return 'l';
+  }
+  else if (_max == rightCount) {
+    return 'r';
+  }
+  if (_max == centreCount) {
+    return 'c';
+  }
+  
+}
+
+
+// END INFRARED
