@@ -1,6 +1,6 @@
 
 /*
- * This was just going to be for spacial sensors, but at this point why not have the IR receiver here too.
+ * This was just going to be for spacial sensors, but at this point why not have the IR receiver here too. Or all of the sensors, that works too
  */
 
 #include "spacial.h"
@@ -21,22 +21,18 @@
 // time of flight var
 VL53L0X tof;
 
-
 // tracker sensor pins
 const int rightTracker = 13;
 const int leftTracker = 16;
-
 
 // usound
 const int usoundTrigger = 33;
 const int usoundEcho = 32;
 
-
 // accel & gyro
 MPU6050 accelgyro;
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
-
 
 // ir receiver
 const int irPin = 14;
@@ -80,12 +76,12 @@ void setupSpacial() {
 
   // ir receiver
   irrecv.enableIRIn();
-}
 
   // thermometer
   thermo.begin();
 }
 
+/* gets a distance reading from the front-facing time of flight sensor (in mm) */
 int getTof() {
   if (tof.timeoutOccurred()) {
     return 0;
@@ -102,15 +98,18 @@ bool getTracker(int side) {
   return digitalRead(side == 0 ? leftTracker : rightTracker) == 1;
 }
 
-
+/* gets a time reading from the back-facing ultrasound sensor... haven't been bothered to convert to distance yet */
 int getUsound() {
+  // send trigger signal - request for a reading
   digitalWrite(usoundTrigger, HIGH);
   delay(0.01);
   digitalWrite(usoundTrigger, LOW);
 
+  // read echo / return from sensor
   return pulseIn(usoundEcho, HIGH);
 }
 
+/* maybe functional... we're not really using this */
 short* getGyro() {
   // I have no clue how pointers work aaAAAA
   
@@ -126,9 +125,11 @@ short* getGyro() {
   return ptr;
 }
 
+/* gets a reading from the infrared receiver */
 long getIR() {
   // I think this works???
   decode_results res;
+  // check that the result can be decoded
   if (irrecv.decode(&res)) {
     irrecv.resume();
     return res.value;

@@ -1,6 +1,6 @@
 
 /*
- * As the name suggests, this is just motor control.
+ * As the name suggests, this is just motor control for our pair of DC motors. Used a DRV8833 motor bridge.
  */
 
 #include "motors.h"
@@ -31,22 +31,35 @@ void stopDriveMotors() {
 }
 
 
-/* motors can be driven backwards using negative power values */
+/* 
+ *  Our motors are driven by the effective potential difference / voltage between each of their two pins.
+ *  Pins are opperated using PWM. I think 255 doesn't work for some reason, but having tested the 180..200 range, it works fine.
+ *  Just pass a value in that range for each motor. Negative values will be used to drive the motor backwards.
+ *  
+ *  https://www.ti.com/lit/ds/symlink/drv8833.pdf
+ *  Tables 1 & 2 from section 7.3.2 of the above doc were useful here.
+ */
 void setDriveMotors(int powerL, int powerR) {
+  // right motor
   if (powerR > 0) {
+    // forwards
     analogWrite(right1, 0);
     analogWrite(right2, abs(powerR));
   }
   else {
+    // backwards
     analogWrite(right1, abs(powerR));
     analogWrite(right2, 0);
   }
 
+  // left motor
   if (powerL > 0) {
+    // forwards
     analogWrite(left1, 0);
     analogWrite(left2, abs(powerL));
   }
   else {
+    // backwards
     analogWrite(left1, abs(powerL));
     analogWrite(left2, 0);
   }

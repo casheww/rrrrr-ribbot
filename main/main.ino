@@ -49,7 +49,7 @@ int currentSection = 0;
 void loop() {
 
   // TODO ? allignWithBridge();
-
+  
   if (currentSection == 0){
     crossBridge();
     setLED(0, false);
@@ -65,20 +65,11 @@ void loop() {
   }
   else if (currentSection >= 3) {
     doPrettyLEDs();
-  }
 
 }
 
 
 // START BRIDGE
-
-const float upModMin = 1.1;
-const float upModMax = 1.4;
-const float downModMax = 0.9;
-const float downModMin = 0.6;
-
-float upMod;
-float downMod;
 
 // to cross the rainbow bridge without falling off the edge
 void crossBridge() {
@@ -105,8 +96,7 @@ void crossBridge() {
       setLED(1, false);
       // turn away from edge slightly
       t++;
-      setSpeedMod(t);
-      setDriveMotors(forwardPower * upMod, forwardPower * downMod);
+      setDriveMotors(forwardPower * 0.95, forwardPower * 0);
       //delay(200);
     }
 
@@ -115,8 +105,7 @@ void crossBridge() {
       setLED(1, false);
       // turn away from edge slightly
       t++;
-      setSpeedMod(t);
-      setDriveMotors(forwardPower * downMod, forwardPower * upMod);
+      setDriveMotors(forwardPower * 0, forwardPower * 0.95);
       //delay(200);
     }
 
@@ -141,17 +130,6 @@ void crossBridge() {
       //setLED(0, true);
     }
   }
-}
-
-
-// this doesn't actually do anything interesting anymore
-int setSpeedMod(int timerCount) {
-  float t = timerCount / 10;
-  // lerp
-  upMod = 1.95;
-  downMod = 0;
-  //upMod = upModMin + (upModMax - upModMin) * t;
-  //downMod = downModMax - (downModMax - downModMin) * t;
 }
 
 
