@@ -13,6 +13,9 @@
 #include <MPU6050.h>
 #include <IRremoteESP8266.h>
 #include <IRutils.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
 
 
 // time of flight var
@@ -38,6 +41,14 @@ int16_t gx, gy, gz;
 // ir receiver
 const int irPin = 14;
 IRrecv irrecv(irPin);
+
+// thermometer
+#define ONE_WIRE_BUS 17
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature thermo(&oneWire);
+
+
+// ===================================
 
 
 void setupSpacial() {
@@ -71,6 +82,9 @@ void setupSpacial() {
   irrecv.enableIRIn();
 }
 
+  // thermometer
+  thermo.begin();
+}
 
 int getTof() {
   if (tof.timeoutOccurred()) {
@@ -118,5 +132,18 @@ long getIR() {
   if (irrecv.decode(&res)) {
     irrecv.resume();
     return res.value;
+  }
+}
+
+/* gets a temperature reading from the thermometer */
+float getTemperature() {
+  thermo.requestTemperatures();
+  float t = thermo.getTempCByIndex(0);
+  
+  if(t != DEVICE_DISCONNECTED_C) {
+    return t;
+  } 
+  else {
+    return 0;
   }
 }
