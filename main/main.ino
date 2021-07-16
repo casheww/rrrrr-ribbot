@@ -102,6 +102,7 @@ void crossBridge() {
 
     // left tracker
     else if (!getTracker(0)) {
+      setLED(1, false);
       // turn away from edge slightly
       t++;
       setSpeedMod(t);
@@ -111,6 +112,7 @@ void crossBridge() {
 
     // right tracker
     else if (!getTracker(1)) {
+      setLED(1, false);
       // turn away from edge slightly
       t++;
       setSpeedMod(t);
@@ -120,13 +122,14 @@ void crossBridge() {
 
     // set motors forward again if safe to move forward
     else if (getTracker(0) && getTracker(1)) {
+      setLED(1, false);
       setDriveMotors(forwardPower, forwardPower);
       t = 0;
     }
 
     int d = getTof();
     if (d < 300) {
-      success = wheelCheck();
+      success = wheelCheck(true);
       if (!success) {
         setDriveMotors(forwardPower, forwardPower);
       }
@@ -145,7 +148,7 @@ void crossBridge() {
 int setSpeedMod(int timerCount) {
   float t = timerCount / 10;
   // lerp
-  upMod = 1.1;
+  upMod = 1.95;
   downMod = 0;
   //upMod = upModMin + (upModMax - upModMin) * t;
   //downMod = downModMax - (downModMax - downModMin) * t;
@@ -157,18 +160,29 @@ int setSpeedMod(int timerCount) {
    Should return true if the obstacle moves and is probably the wheel.
    Shold return false if the obstacle doesn't move and is probably a wall.
 */
-bool wheelCheck() {
+bool wheelCheck(bool getFreshDistances) {
   Serial.println("doing wheel check");
   setLED(1, true);
 
-  stopDriveMotors();
+  if (getFreshDistances) {
+    stopDriveMotors();
+  }
+  
   int sum = 0;
 
   for (distIndex = 0; distIndex < wheelDistArrayLen; distIndex++) {
-    int d = getTof();
-    distances[distIndex] = d;
+    int d;
+
+    if (getFreshDistances) {
+      d = getTof();
+      distances[distIndex] = d;
+      delay(250);
+    }
+    else {
+      d = distances[distIndex];
+    }
+    
     sum += d;
-    delay(250);
   }
 
   float avg = sum / wheelDistArrayLen;
@@ -208,7 +222,7 @@ bool wheelCheck() {
 // START SPINNY WHEEL
 
 void passSpinnyWheelWall() {
-  Serial.println("passing the spinny wheel wall");
+  Serial.println("determined that target is the wheel (not wall) - passing the spinny wheel wall");
   bool success = false;
   bool stopped = true;
 
@@ -219,6 +233,10 @@ void passSpinnyWheelWall() {
   int farIndex = -1;
 
   while (!success) {
+
+    distances[distIndex] = getTof();
+    distIndex++;
+    if (distIndex >= wheelDistArrayLen) { distIndex = 0; }
 
     for (int i = 0; i < wheelDistArrayLen; i++) {
       setLED(1, true);
@@ -241,7 +259,46 @@ void passSpinnyWheelWall() {
     Serial.print("far ");
     Serial.println(farIndex);
     Serial.println(distances[farIndex]);
-    
+
+    if (wheelCheck(false)) {
+      setLED(0, true);
+      int d1 = getTof();
+      if (d1 < 80) {
+        setLED(0, true);
+        stopDriveMotors();
+        // wait for wheel to pass us by?
+        delay(1250);
+        setDriveMotors(-190, -190);
+        delay(650);
+        setDriveMotors(-190, 0);
+        delay(400);
+        stopDriveMotors();
+        delay(50);
+        setDriveMotors(200, 210);
+        Serial.println("passed wheel?");
+        success = true;
+      }
+      else {
+        setLED(0, false);
+        setDriveMotors(200, 210);
+      }
+    }
+    else {
+      setLED(0, true);
+      Serial.println("this is a wall aaaaa !!!");
+      stopDriveMotors();
+      // wait for wheel to pass us by?
+      delay(1250);
+      setDriveMotors(-190, -190);
+      delay(650);
+      setDriveMotors(-190, 0);
+      delay(400);
+      stopDriveMotors();
+      delay(50);
+      setDriveMotors(200, 210);
+    }
+
+    /*
     if (closeIndex != -1 && farIndex != -1) {
       setLED(0, true);
       // we think we have seen the wheel on both the close and far sides of its rotation
@@ -249,6 +306,7 @@ void passSpinnyWheelWall() {
         // we think the closer part of the rotation is near to the end of the array
         success = true;
         currentSection = 2;
+        return;
       }
       else {
         stopDriveMotors();
@@ -257,20 +315,21 @@ void passSpinnyWheelWall() {
         do {
           d = getTof();
           delay(100);
-        } while (d > 80);
+        } while (d < 50 || d > 150);
+        
+        wheelCheck(false);
+
       }
     }
     else {
-      setDriveMotors(180,180);
-      delay(100);
-      wheelCheck();
-    }
+      setDriveMotors(190,190);
+      delay(500);
+      wheelCheck(true);
+    }*/
   }
 }
 
 // END SPINNY WHEEL
-
-
 
 // START INFRARED
 
@@ -281,15 +340,23 @@ void followIRBeacon() {
   bool overallSuccess = false;
 
   // blindly drive forward and hope that everything is okay
-  setDriveMotors(180, 180);
-  delay(1000);
+
+  /*
+  int d;
+  do {
+    setDriveMotors(200, 210);
+    d = getTof();    
+  } while (d > 50);
+  
+  setDriveMotors(200, 210);
+  delay(5000);
   stopDriveMotors();
   delay(100);
   setDriveMotors(180,-180);
   delay(500);
   stopDriveMotors();
   delay(100);
-  setDriveMotors(180, 180);
+  setDriveMotors(180, 180);*/
 
   while (!finalSuccess) {
 
@@ -315,11 +382,20 @@ void followIRBeacon() {
       setDriveMotors(0, 190);
     }
     else if (pos = 'c') {
-      setLED(0, true);
-      setLED(1, true);
-      pos = 'c';
-      Serial.println(pos);
-      setDriveMotors(190, 190);
+      if (getTof() < 50) {
+        stopDriveMotors();
+        Serial.println("in IR section, centred, stopped");
+        finalSuccess = true;
+        delay(200);
+      }
+      else {
+        setLED(0, true);
+        setLED(1, true);
+        pos = 'c';
+        Serial.println(pos);
+        setDriveMotors(190, 190);
+      }
+      
     }
 
     delay(400);
@@ -361,7 +437,31 @@ char checkIRCorridorPos() {
 
   int _max = max(max(leftCount, centreCount), rightCount);
 
-  if (_max == leftCount) {
+  if (_max == 0) {
+    if (wheelCheck(false)) {
+      setLED(0, true);
+      int d1 = getTof();
+      if (d1 < 80) {
+        setLED(0, true);
+        stopDriveMotors();
+        // wait for wheel to pass us by?
+        delay(1250);
+        setDriveMotors(-190, -190);
+        delay(650);
+        setDriveMotors(-190, 0);
+        delay(400);
+        stopDriveMotors();
+        delay(50);
+        setDriveMotors(200, 210);
+        Serial.println("that was a wall aaaa");
+      }
+      else {
+        setLED(0, false);
+        setDriveMotors(200, 210);
+      }
+    }
+  }
+  else if (_max == leftCount) {
     return 'l';
   }
   else if (_max == rightCount) {
