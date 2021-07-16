@@ -65,6 +65,7 @@ void loop() {
   }
   else if (currentSection >= 3) {
     doPrettyLEDs();
+  }
 
 }
 
@@ -212,6 +213,7 @@ void passSpinnyWheelWall() {
 
   while (!success) {
 
+    // replace the oldest of the TOF distance readings with a new one
     distances[distIndex] = getTof();
     distIndex++;
     if (distIndex >= wheelDistArrayLen) { distIndex = 0; }
@@ -223,13 +225,16 @@ void passSpinnyWheelWall() {
       Serial.print(" , ");
 
       if (d < 300) {
+        // index of an entry where the wheel was probably in the closest part of its rotation
         closeIndex = i;
       }
-      else if (400 < d && d < 600) {
+      else if (400 < d && d < 700) {
+        // index of an entry where the wheel was probably in the further part of its rotation
         farIndex = i;
       }
       setLED(1, false);
     }
+    
     Serial.println();
     Serial.print("near ");
     Serial.println(closeIndex);
@@ -238,7 +243,10 @@ void passSpinnyWheelWall() {
     Serial.println(farIndex);
     Serial.println(distances[farIndex]);
 
+    // wheel check based on the values in our distances array, but as we are gradually replacing old values with new ones (a few lines up)
     if (wheelCheck(false)) {
+      
+      // we are moving and/or what we are looking at is moving
       setLED(0, true);
       int d1 = getTof();
       if (d1 < 80) {
@@ -255,13 +263,16 @@ void passSpinnyWheelWall() {
         setDriveMotors(200, 210);
         Serial.println("passed wheel?");
         success = true;
+        
       }
       else {
         setLED(0, false);
         setDriveMotors(200, 210);
       }
     }
+    
     else {
+      // we are sitting still and whatever we are looking at is also sitting still
       setLED(0, true);
       Serial.println("this is a wall aaaaa !!!");
       stopDriveMotors();
@@ -275,35 +286,6 @@ void passSpinnyWheelWall() {
       delay(50);
       setDriveMotors(200, 210);
     }
-
-    /*
-    if (closeIndex != -1 && farIndex != -1) {
-      setLED(0, true);
-      // we think we have seen the wheel on both the close and far sides of its rotation
-      if (closeIndex > wheelDistArrayLen * 0.7) {
-        // we think the closer part of the rotation is near to the end of the array
-        success = true;
-        currentSection = 2;
-        return;
-      }
-      else {
-        stopDriveMotors();
-        stopped = true;
-        int d;
-        do {
-          d = getTof();
-          delay(100);
-        } while (d < 50 || d > 150);
-        
-        wheelCheck(false);
-
-      }
-    }
-    else {
-      setDriveMotors(190,190);
-      delay(500);
-      wheelCheck(true);
-    }*/
   }
 }
 
@@ -317,25 +299,6 @@ void followIRBeacon() {
   bool finalSuccess = false;
   bool overallSuccess = false;
 
-  // blindly drive forward and hope that everything is okay
-
-  /*
-  int d;
-  do {
-    setDriveMotors(200, 210);
-    d = getTof();    
-  } while (d > 50);
-  
-  setDriveMotors(200, 210);
-  delay(5000);
-  stopDriveMotors();
-  delay(100);
-  setDriveMotors(180,-180);
-  delay(500);
-  stopDriveMotors();
-  delay(100);
-  setDriveMotors(180, 180);*/
-
   while (!finalSuccess) {
 
     long ir = getIR();
@@ -348,18 +311,18 @@ void followIRBeacon() {
     if (pos == 'l') {
       setLED(0, true);
       setLED(1, false);
-      pos = 'l';
+      //pos = 'l';
       Serial.println(pos);
       setDriveMotors(190, 0);
     }
     else if (pos == 'r') {
       setLED(0, false);
       setLED(1, true);
-      pos = 'r';
+      //pos = 'r';
       Serial.println(pos);
       setDriveMotors(0, 190);
     }
-    else if (pos = 'c') {
+    else if (pos == 'c') {
       if (getTof() < 50) {
         stopDriveMotors();
         Serial.println("in IR section, centred, stopped");
@@ -369,7 +332,7 @@ void followIRBeacon() {
       else {
         setLED(0, true);
         setLED(1, true);
-        pos = 'c';
+        //pos = 'c';
         Serial.println(pos);
         setDriveMotors(190, 190);
       }
