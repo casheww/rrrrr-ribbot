@@ -47,9 +47,8 @@ void setup() {
 int currentSection = 0;
 
 void loop() {
-
-  // TODO ? allignWithBridge();
   
+  // TODO ? allignWithBridge();
   if (currentSection == 0){
     crossBridge();
     setLED(0, false);
@@ -63,7 +62,7 @@ void loop() {
   else if (currentSection == 2) {
     followIRBeacon();
   }
-  else if (currentSection >= 3) {
+  else {
     doPrettyLEDs();
   }
 
@@ -141,6 +140,8 @@ void crossBridge() {
 */
 bool wheelCheck(bool getFreshDistances) {
   Serial.println("doing wheel check");
+  Serial.print("getting fresh distances? ");
+  Serial.println(getFreshDistances);
   setLED(1, true);
 
   if (getFreshDistances) {
@@ -160,9 +161,13 @@ bool wheelCheck(bool getFreshDistances) {
     else {
       d = distances[distIndex];
     }
+
+    Serial.print(d);
+    Serial.print(" , ");
     
     sum += d;
   }
+  Serial.println("");
 
   float avg = sum / wheelDistArrayLen;
   Serial.print("average ");
@@ -243,38 +248,38 @@ void passSpinnyWheelWall() {
     Serial.println(farIndex);
     Serial.println(distances[farIndex]);
 
-    // wheel check based on the values in our distances array, but as we are gradually replacing old values with new ones (a few lines up)
-    if (wheelCheck(false)) {
-      
-      // we are moving and/or what we are looking at is moving
+    // floodlight over course is really hot, so this should work
+    float temp = getTemperature();
+    Serial.print("temperature : ");
+    Serial.print(temp);
+    Serial.println("");
+    if (temp > 35) {
+      Serial.println("temperature is overthreshold so wheel section is success ?");
       setLED(0, true);
-      int d1 = getTof();
-      if (d1 < 80) {
-        setLED(0, true);
-        stopDriveMotors();
-        // wait for wheel to pass us by?
-        delay(1250);
-        setDriveMotors(-190, -190);
-        delay(650);
-        setDriveMotors(-190, 0);
-        delay(400);
-        stopDriveMotors();
-        delay(50);
-        setDriveMotors(200, 210);
-        Serial.println("passed wheel?");
-        success = true;
-        
-      }
-      else {
-        setLED(0, false);
-        setDriveMotors(200, 210);
-      }
+      setLED(1, true);
+      setDriveMotors(-190, -190);
+      delay(750);
+      setDriveMotors(0, -190);
+      delay(1200);
+      stopDriveMotors();
+      success = true;
+      currentSection = 2;
     }
-    
     else {
-      // we are sitting still and whatever we are looking at is also sitting still
+      doWheelCollisionStuff();
+    }
+  }
+}
+
+void doWheelCollisionStuff() {
+  // wheel check based on the values in our distances array, but as we are gradually replacing old values with new ones (a few lines up)
+  if (wheelCheck(false)) {
+    
+    // we are moving and/or what we are looking at is moving
+    setLED(0, true);
+    int d1 = getTof();
+    if (d1 < 80) {
       setLED(0, true);
-      Serial.println("this is a wall aaaaa !!!");
       stopDriveMotors();
       // wait for wheel to pass us by?
       delay(1250);
@@ -286,6 +291,26 @@ void passSpinnyWheelWall() {
       delay(50);
       setDriveMotors(200, 210);
     }
+    else {
+      setLED(0, false);
+      setDriveMotors(200, 210);
+    }
+  }
+  
+  else {
+    // we are sitting still and whatever we are looking at is also sitting still
+    setLED(0, true);
+    Serial.println("this is a wall aaaaa !!!");
+    stopDriveMotors();
+    // wait for wheel to pass us by?
+    delay(1250);
+    setDriveMotors(-190, -190);
+    delay(650);
+    setDriveMotors(-190, 0);
+    delay(400);
+    stopDriveMotors();
+    delay(50);
+    setDriveMotors(200, 210);
   }
 }
 
@@ -408,7 +433,7 @@ char checkIRCorridorPos() {
   else if (_max == rightCount) {
     return 'r';
   }
-  if (_max == centreCount) {
+  else if (_max == centreCount) {
     return 'c';
   }
   
