@@ -47,8 +47,9 @@ void setup() {
 int currentSection = 0;
 
 void loop() {
-  
+
   // TODO ? allignWithBridge();
+  
   if (currentSection == 0){
     crossBridge();
     setLED(0, false);
@@ -89,6 +90,10 @@ void crossBridge() {
       stopDriveMotors();
       warningLedOn = !warningLedOn;
       setLED(1, warningLedOn);
+      delay(50);
+      setDriveMotors(180, 0);
+      delay(200);
+      stopDriveMotors();
     }
 
     // left tracker
@@ -205,6 +210,8 @@ bool wheelCheck(bool getFreshDistances) {
 
 // START SPINNY WHEEL
 
+float lastTemp = 0;
+
 void passSpinnyWheelWall() {
   Serial.println("determined that target is the wheel (not wall) - passing the spinny wheel wall");
   bool success = false;
@@ -253,7 +260,7 @@ void passSpinnyWheelWall() {
     Serial.print("temperature : ");
     Serial.print(temp);
     Serial.println("");
-    if (temp > 35) {
+    if ((lastTemp != 0 && temp > lastTemp + 0.7) || temp > 29) {
       Serial.println("temperature is overthreshold so wheel section is success ?");
       setLED(0, true);
       setLED(1, true);
@@ -265,7 +272,15 @@ void passSpinnyWheelWall() {
       success = true;
       currentSection = 2;
     }
+    else if (checkIRCorridorPos() != 'z') {
+      setDriveMotors(0, -190);
+      delay(700);
+      stopDriveMotors();
+      success = true;
+      currentSection = 2;
+    }
     else {
+      lastTemp = temp;
       doWheelCollisionStuff();
     }
   }
@@ -377,6 +392,7 @@ void followIRBeacon() {
  *    'l' when too far left
  *    'r' when too far right
  *    'c' when in the centre of the corridor.
+ *    'z' for AAAAAAAAAAAAA WHAT ??
  *  Due to the use of an array that's built up and updated over time, there is a little delay (see followIRBeacon)
  */
 char checkIRCorridorPos() {
@@ -426,6 +442,7 @@ char checkIRCorridorPos() {
         setDriveMotors(200, 210);
       }
     }
+    return 'z';
   }
   else if (_max == leftCount) {
     return 'l';
