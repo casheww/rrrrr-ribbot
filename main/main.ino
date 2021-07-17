@@ -20,7 +20,7 @@
 
 
 // wheel takes ~ 6 seconds to do a full rotation, so we can take 15 distance readings ~0.5 seconds apart to get a picture of a full rotation (and a bit)
-const int wheelDistArrayLen = 15;
+const int wheelDistArrayLen = 11;
 int distances[wheelDistArrayLen];
 int distIndex = 0;
 
@@ -28,7 +28,7 @@ const int IRarrayLen = 5;
 long IRreadings[IRarrayLen];
 int IRindex = 0;
 
-
+float startTemp;
 
 void setup() {
 
@@ -38,7 +38,15 @@ void setup() {
   setupSpacial();         // setup spacial sensors and pins and whatnot, y'know
   setupMotors();          // setup motor pin modes
 
-  delay(500);
+  delay(400);
+
+  float s;
+  for (int i = 0; i < 3; i++) {
+    s += getTemperature();
+    delay(25);
+  }
+
+  startTemp = s / 3;
 
 }
 
@@ -122,7 +130,8 @@ void crossBridge() {
     }
 
     int d = getTof();
-    if (d < 300) {
+        
+    if (d < 100) {
       success = wheelCheck(true);
       if (!success) {
         setDriveMotors(forwardPower, forwardPower);
@@ -142,6 +151,8 @@ void crossBridge() {
    Attempt to tell the difference between wheel barrier and wall.
    Should return true if the obstacle moves and is probably the wheel.
    Shold return false if the obstacle doesn't move and is probably a wall.
+
+   "vibe check the wheel" - nathan, 2021
 */
 bool wheelCheck(bool getFreshDistances) {
   Serial.println("doing wheel check");
@@ -161,7 +172,14 @@ bool wheelCheck(bool getFreshDistances) {
     if (getFreshDistances) {
       d = getTof();
       distances[distIndex] = d;
-      delay(250);
+
+      if (300 < d && d < 600) {
+        setDriveMotors(190, 200);
+      }
+      else {
+        delay(25);
+      }
+      
     }
     else {
       d = distances[distIndex];
@@ -260,7 +278,7 @@ void passSpinnyWheelWall() {
     Serial.print("temperature : ");
     Serial.print(temp);
     Serial.println("");
-    if ((lastTemp != 0 && temp > lastTemp + 0.7) || temp > 29) {
+    if ((lastTemp != 0 && temp > lastTemp + 0.3) || temp > 29 || temp > startTemp + 2) {
       Serial.println("temperature is overthreshold so wheel section is success ?");
       setLED(0, true);
       setLED(1, true);
@@ -281,12 +299,14 @@ void passSpinnyWheelWall() {
     }
     else {
       lastTemp = temp;
-      doWheelCollisionStuff();
+      success = doWheelCollisionStuff();
+      if (success) { currentSection = 2; }
     }
   }
 }
 
-void doWheelCollisionStuff() {
+// returns true if thinks done
+bool doWheelCollisionStuff() {
   // wheel check based on the values in our distances array, but as we are gradually replacing old values with new ones (a few lines up)
   if (wheelCheck(false)) {
     
@@ -314,19 +334,54 @@ void doWheelCollisionStuff() {
   
   else {
     // we are sitting still and whatever we are looking at is also sitting still
+
+    setDriveMotors(180, 190);
+    delay(650);
+    stopDriveMotors();
+    if (getTof() > 800) {
+      return true;
+    }
+    
     setLED(0, true);
     Serial.println("this is a wall aaaaa !!!");
     stopDriveMotors();
     // wait for wheel to pass us by?
+
+    int distL;
+    int distR;
+    
     delay(1250);
     setDriveMotors(-190, -190);
-    delay(650);
-    setDriveMotors(-190, 0);
     delay(400);
     stopDriveMotors();
     delay(50);
-    setDriveMotors(200, 210);
+
+    setDriveMotors(-180, 180);
+    delay(250);
+    stopDriveMotors();
+    distL = getTof();
+    setDriveMotors(180, -180);
+    delay(500);
+    stopDriveMotors();
+    distR = getTof();
+    setDriveMotors(-180, 180);
+    delay(250);
+    stopDriveMotors();
+
+    if (distL < distR) {
+      setDriveMotors(-190, 0);
+    }
+    else {
+      setDriveMotors(0, -190);
+    }
+
+    delay(600);
+    stopDriveMotors();
+
+
+    setLED(0, false);
   }
+  return false;
 }
 
 // END SPINNY WHEEL
